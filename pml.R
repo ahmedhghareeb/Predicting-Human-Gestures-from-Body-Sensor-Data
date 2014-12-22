@@ -1,17 +1,16 @@
-# for this classification problem, we intend to predice the class of actions
-# I planned to use the following algorithms: decision trees,bagging+decision trees, random forest, and boosting
+# for this classification problem, we intend to predict the type of actions through human sensor data
+# I planned to use the following algorithms: decision trees, bagging+decision trees, random forest, and boosting etc. depending on the time
 # the steps are: 1) preprocessing the data: scale, transfering factors to numbers if necessary
-# exploratory data analysis: plotting, correlation, PCA and SVD
+# exploratory data analysis: plotting, correlation, PCA
 # try the decision tree method first and note to use CV method
-setwd("C:/course/open_courses/practical machine learning/project")
 library(caret)
 library(ggplot2)
 
-#data <- read.csv("pml-training.csv", na.string = "NA")
-
 ##remove the NAs variables first
+# data is the traning set
 data <- read.csv("pml-training.csv", na.string = "NA")
 data0 <- read.csv("pml-training.csv", na.string = "")
+#data99 is the test set
 data99 <- read.csv("pml-testing.csv", na.string = "NA")
 
 remove_NA <- function(data){
@@ -24,17 +23,20 @@ remove_NA <- function(data){
     na_col
 }
 
+#pml is the training dataset after removing NA
 pml <- data[, -c(remove_NA(data0), remove_NA(data))]
+# pml99 is the testing dataset after removing NA
 pml99 <- data99[, -c(remove_NA(data0), remove_NA(data))]
+#remove data0 
 rm(list= "data0")
-###change some variable's names
 
+###change some variable's names
 colnames(pml)[1] <- "row_num"
 colnames(pml)[dim(pml)[2]] <- "class"
 
 colnames(pml99)[1] <- "row_num"
 colnames(pml99)[dim(pml99)[2]] <- "class"
-#toString?? the whole
+
 ##transform the time to POSIXt class
 pml$cvtd_timestamp <-strptime(as.character(pml$cvtd_timestamp), format = "%m/%d/%Y %H:%M")
 leftoverDate <- strptime(as.character(data$cvtd_timestamp[which(is.na(pml$cvtd_timestamp))]), format = "%d/%m/%Y %H:%M")
@@ -51,51 +53,10 @@ pml99$cvtd_timestamp <- as.numeric(pml99$cvtd_timestamp)
 #dim(pml)
 #[1]19622    60
 
-##################################################################
-######section: Exploratory data analysis
-ggplot(pml, aes(x=pml[,1], y=class, colour=class)) +  geom_point()
-##so the row_num is not one variable that should be included; is there any other variabls?......
-
-##remove the row_num variable
-pml99 <- pml99[,-1]
-pml <- pml[, -1]
-
-# # 1 row_name  
-# (dim(pml)[2]-1)
-# figure_lst = c()
-# for (i in 1:3){
-#     each_figure <- ggplot(pml, aes(x=pml[,i], y=class, colour=class)) +  geom_point()
-#     figure_lst = c(figure_lst, each_figure)
-# }
-# 
-# grid.arrange(figure_lst[1],figure_lst[2],ncol = 2)
-# 
-# #multiplot(figure_lst, cols =3)
-# library(grid)
-# require(gridExtra)
-# library(wq)
-# layOut(list(figure_lst[1], 1 ,1),list(figure_lst[2], 1 ,2),list(figure_lst[3], 1 ,3)) 
-# plot1 <- qplot(1)
-# plot2 <- qplot(1)
-# 
-# grid.arrange(plot1, plot2, ncol=2)
-# 
-# for (i in 1:2){
-#     ggplot(pml[,i], class, data = pml, col = class)
-#     #figure_lst = c(figure_lst, each_figure)
-# }
-# graphics.off()
-# qplot(pml[,1], class, data = pml, col = class)
-
-
-
-
-
-
 
 
 #################################################################
-###########################Section pre_processing the data
+###########################Section: Exploratory data analysis and  Pre_processing the data
 #Creating Dummy Variables
 #Zero- and Near Zero-Variance Predictors
 #Identifying Correlated Predictors
@@ -105,6 +66,13 @@ pml <- pml[, -1]
 #Transforming Predictors
 #Class Distance Calculations
 #BoxCox, PCA, Imputation, center and scaling, linear dependency, coorrelated predictors, zero-variance predictor, dummy variables
+
+
+ggplot(pml, aes(x=pml[,1], y=class, colour=class)) +  geom_point()
+##so the row_num is not one variable that should be included; is there any other variabls?......
+##remove the row_num variable
+pml99 <- pml99[,-1]
+pml <- pml[, -1]
 
 #for all numeric and int variables: 1)zero-variance predictor 2) imputation 3)boxcox if distribution wierd 4) center and scaling 5) coorrelated predictors 6)linear dependency 7)PCA and predictor transformation
 #for the factor variables: 1)dummy variable 3) imputation 4)about the low frequecy but key factor.  5)the above 1),3)-7)? canNOT be done for factors, only do the first three steps about factor Vs
@@ -288,10 +256,11 @@ testing_pca_rpart_predict <- predict(pca_mod_rpart_fit, testing)
 sum(testing_pca_rpart_predict == testing$class)/length(testing_pca_rpart_predict)
 
 pml_pca99_pca_rpart_predict <- predict(pca_mod_rpart_fit, pml_pca99)
+#results:
 #C A A C C D C C A A A C A A C E A C C D
 ########################################################3
 
-##two models: random forest and boosting with tree(too much computaion there)
+##two models: random forest and boosting with tree(too much computation there)
 #remember to set seed!!!!!
 set.seed(12312)
 inTrain <- createDataPartition( y= pml_pca$class, p = 0.9, list = FALSE)
@@ -313,10 +282,8 @@ pml_pca99_pca_rf_predict <- predict(pca_mod_rf_fit, pml_pca99)
 ################################################################
 
 
-#########################3the following models are not reported in the project report.
-###################################################################
-###########################################################
-#well the above result is not satifying, the below seems quite fast---I donot know why..you should try this.  No known yet.
+#########################the following models are not reported in the project report.############
+##################################################################################################
 ##random forest
 set.seed(12312)
 inTrain <- createDataPartition( y= pml_remove_corr$class, p = 0.9, list = FALSE)
@@ -342,43 +309,20 @@ pred_results_remove_corr_rf_99 <- predict(remove_corr_mod_rf_fit,  pml_remove_co
 # [1] B A A A A A A B A A A A B A B A A B B B
 #
 #sum(pml_remove_corr[,"class"] == pred_results_remove_corr_rf)/length(pred_results_remove_corr_rf)
-########there is overfitting in there
-
-
-
-
+########there is overfitting in the model
 
 
 
 
 
 ####the boosting with tree model should be good, but too much computationnal cost::
-#pca_mod_gbm_fit <- train( class ~.,data = pml_pca, method = "gbm", verbose = T)
-
-##try a simple tree model with cross validation
-set.seed(12312)
-inTrain <- createDataPartition( y= pml_pca$class, p = 0.9, list = FALSE)
-training <- pml_pca[inTrain, ]
-testing  <- pml_pca[-inTrain, ]
-#identical(sort(unique(c(testing[[1]], training[[1]]))), unique(pml[[1]]))-----so simple bootstrap sampling called in caret here is sample without replacement, which is a little bit confusing...
+pca_mod_gbm_fit <- train( class ~.,data = pml_pca, method = "gbm", verbose = T)
 
 
-fitControl <- trainControl(## repeated 10-fold CV
-    method = "repeatedcv",
-    number = 10,
-    ## repeated  3 times
-    repeats = 1)
-
-set.seed(12023)
-tree_mod_rpart_fit <- train(class~., data = training, method = "rpart" , trControl = fitControl)
-
-tree_predict_result_testing <- predict(tree_mod_rpart_fit, testing)
-
-sum(tree_predict_result_testing == testing$class)/length(tree_predict_result_testing)
 
 
-####useing the original non-processing dataset
-##try a simple tree model with cross validation
+#######useing the original non-processing dataset####################
+######try a simple tree model with cross validation###################
 set.seed(12312)
 inTrain <- createDataPartition( y= pml$class, p = 0.9, list = FALSE)
 training <- pml[inTrain, ]
@@ -390,14 +334,12 @@ testing  <- pml[-inTrain, ]
 fitControl <- trainControl(## repeated 10-fold CV
     method = "repeatedcv",
     number = 10,
-    ## repeated  3 times
+    ## repeated  5 times
     repeats = 5)
 
 set.seed(12023)
 tree_mod_rpart_fit <- train(class~., data = training, method = "rpart" , trControl = fitControl)
-
 tree_predict_result_testing <- predict(tree_mod_rpart_fit, testing)
-
 sum(tree_predict_result_testing == testing$class)/length(tree_predict_result_testing)
 ###########################################
 ###################for the remove correlation datasets
@@ -407,31 +349,24 @@ inTrain <- createDataPartition( y= pml_remove_corr$class, p = 0.9, list = FALSE)
 training <- pml_remove_corr[inTrain, ]
 testing  <- pml_remove_corr[-inTrain, ]
 #identical(sort(unique(c(testing[[1]], training[[1]]))), unique(pml[[1]]))-----so simple bootstrap sampling called in caret here is sample without replacement, which is a little bit confusing...
-
-
 fitControl <- trainControl(## repeated 10-fold CV
     method = "repeatedcv",
     number = 10,
     ## repeated  3 times
     repeats = 1)
-
 set.seed(12023)
 tree_mod_rpart_fit <- train(class~., data = training, method = "rpart" , trControl = fitControl)
-
 tree_predict_result_testing <- predict(tree_mod_rpart_fit, testing)
 #tree_predict_result_testing <- predict(tree_mod_rpart_fit, testing)
 sum(tree_predict_result_testing == testing$class)/length(tree_predict_result_testing)
 
 
 ###################pml_dum, only processing the factor variables
-
 set.seed(12312)
 inTrain <- createDataPartition(y= pml_dum$class, p = 0.9, list = FALSE)
 training <- pml_dum[inTrain, ]
 testing  <- pml_dum[-inTrain, ]
 #identical(sort(unique(c(testing[[1]], training[[1]]))), unique(pml[[1]]))-----so simple bootstrap sampling called in caret here is sample without replacement, which is a little bit confusing...
-
-
 fitControl <- trainControl(## repeated 10-fold CV
     method = "repeatedcv",
     number = 10,
@@ -448,31 +383,5 @@ tree_predict_result_testing99
 
 
 
-
-
-
-
-
-###################model fitting
-##two models: random forest and boosting with tree
-#remember to set seed??
-# fitControl <- trainControl(## repeated 10-fold CV
-#     method = "repeatedcv",
-#     number = 10,
-#     ## repeated  3 times
-#     repeats = 1)
-set.seed(177)
-remove_corr_mod_rf_fit <- train( class ~.,data = pml_remove_corr[,-1], method = "rf")
-#save(pca_mod_rf_fit, file= "pca_mod_rf_fit.RData")
-#save()
-#pca_mod_rf_fit<-local(get(load("./pca_mod_rf_fit.RData")))
-
-pred_results_remove_corr_rf99 <- predict(remove_corr_mod_rf_fit,  pml_remove_corr99)
-pred_results_remove_corr_rf <- predict(remove_corr_mod_rf_fit, pml_remove_corr)
-# pred_results_rf99
-# [1] B A A A A A A B A A A A B A B A A B B B
-#
-sum(pml_remove_corr[,"class"] == pred_results_remove_corr_rf)/length(pred_results_remove_corr_rf)
-########there is overfitting in there
 
 
